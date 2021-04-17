@@ -1,0 +1,205 @@
+@page "/ViewAll"
+@using System.Collections
+@using System.Collections.ObjectModel
+@using System.Text.Json
+@using FileData
+@using Models
+@inject FileContext FileContext
+
+
+<h3>ViewAll</h3>
+
+<p> Filter by ID: <input type="number" @oninput="@((arg) => FilterByID(arg))" style="width:50px"/> </p>
+
+@if (showFamilies == null)
+{
+    <p>
+        <em>Loading...</em>
+    </p>
+}
+else if (!showFamilies.Any())
+{
+    <p>
+        <em>No ToDo items exist. Please add some.</em>
+    </p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>State</th>
+            <th>First Name</th>
+            <th>Second Name</th>
+
+
+            <th>Age</th>
+            <th>HairColor</th>
+            <th>EyeColor</th>
+            <th>Weight</th>
+            <th>Height</th>
+            <th>Sex</th>
+
+            <th>Job Title</th>
+            <th>Salary</th>
+            <th>Streen Name</th>
+            <th>House#</th>
+            <AuthorizeView Policy="Moderator">
+                <th>Remove</th>
+            </AuthorizeView>
+
+
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in showFamilies)
+        {
+            if (item.Adults != null)
+            {
+                @foreach (var adult in item.Adults)
+                {
+                    <tr>
+                        <td>@adult.Id</td>
+                        <td>Adult</td>
+                        <td>@adult.FirstName</td>
+                        <td>@adult.LastName</td>
+
+                        <td>@adult.Age</td>
+                        <td>@adult.HairColor</td>
+                        <td>@adult.EyeColor</td>
+                        <td>@adult.Weight</td>
+                        <td>@adult.Height</td>
+                        <td>@adult.Sex</td>
+                        @if (adult.JobTitle != null)
+                        {
+                            <td>@adult.JobTitle.JobTitle</td>
+                            <td>@adult.JobTitle.Salary</td>
+                        }
+                        else
+                        {
+                            <td>No Work</td>
+                            <td>No Salary</td>
+                        }
+                        <td>@item.StreetName</td>
+                        <td>@item.HouseNumber</td>
+                        <AuthorizeView Policy="Moderator">
+                            <td>
+                                <button @onclick="@(() => RemoveAdult(item.Id, adult.Id))">
+                                    <i class="oi oi-trash" style="color:#00ffd9"/>
+                                </button>
+                            </td>
+                        </AuthorizeView>
+                    </tr>
+                }
+                if (item.Children != null)
+                {
+                    @foreach (var child in item.Children)
+                    {
+                        <tr>
+                            <td>@child.Id</td>
+                            <td>Child</td>
+                            <td>@child.FirstName</td>
+                            <td>@child.LastName</td>
+                            <td>@child.Age</td>
+                            <td>@child.HairColor</td>
+                            <td>@child.EyeColor</td>
+                            <td>@child.Weight</td>
+                            <td>@child.Height</td>
+                            <td>@child.Sex</td>
+                            <td>---</td>
+                            <td>---</td>
+                            <td>@item.StreetName</td>
+                            <td>@item.HouseNumber</td>
+                            <AuthorizeView Policy="Moderator">
+                                <td>
+                                    ---
+                                </td>
+                            </AuthorizeView>
+
+                        </tr>
+                    }
+                }
+            }
+        }
+        </tbody>
+    </table>
+}
+
+
+
+@code {
+    private IList<Family> families;
+    private IList<Family> showFamilies;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        families = await FetchFamilyAsync();
+        showFamilies = families;
+    }
+
+
+    private void RemoveAdult(int familyId, int adultId)
+    {
+        FileContext.RemoveAdult(familyId, adultId);
+    }
+
+    
+    //could not make this work
+    private void FilterByID(ChangeEventArgs changeEventArgs)
+    {
+        int? filterByID = null;
+
+        try
+        {
+            filterByID = int.Parse(changeEventArgs.Value.ToString());
+        }
+        catch (Exception e)
+        {
+        }
+        if (filterByID != null)
+        {
+            foreach (var temp in families)
+            {
+                if (temp.Adults != null)
+                {
+                    foreach (var adultTemp in temp.Adults)
+                    {
+                        if (!adultTemp.Id.Equals(filterByID))
+                        {
+                            showFamilies[families.IndexOf(temp)].Adults.Remove(adultTemp);
+                        }
+                    }
+                }
+                if (temp.Children != null)
+                {
+                    foreach (var childTemp in temp.Children)
+                    {
+                        if (!childTemp.Id.Equals(filterByID))
+                        {
+                            showFamilies[families.IndexOf(temp)].Children.Remove(childTemp);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            showFamilies = families;
+        }
+    }
+    
+    public async static Task<IList<Family>> FetchFamilyAsync()
+    {
+        HttpClient client = new HttpClient();
+        HttpResponseMessage responseMessage = await client.GetAsync("https://localhost:5003/family");
+        if (!responseMessage.IsSuccessStatusCode)
+            throw new Exception($"Error: {responseMessage.StatusCode}, {responseMessage.ReasonPhrase}");
+        string result = await responseMessage.Content.ReadAsStringAsync();
+        IList<Family> family = JsonSerializer.Deserialize<IList<Family>>(result,
+            new JsonSerializerOptions {PropertyNamingPolicy = JsonNamingPolicy.CamelCase});
+        return family;
+    }
+
+}

@@ -1,0 +1,177 @@
+@page "/ViewAdults"
+@using FileData
+@using Models
+@using System.Text.Json
+@inject FileContext FileContext
+
+
+<h3>ViewAdults</h3>
+<p> Filter by User Id: <input type="number" @oninput="@((arg) => FilterId(arg))" style="width:50px"/> </p>
+<p> Filter by First Name: <input type="search" @oninput="@((arg) => FilterFirstName(arg))" style="width:50px"/> </p>
+<p> Filter by Second Name: <input type="search" @oninput="@((arg) => FilterLastName(arg))" style="width:50px"/> </p>
+<button class="btn btn-outline-light" @onclick="@(() => Reset())"> <i class="oi oi-pencil"/> Reset </button>
+
+
+@if (showAdults == null)
+{
+    <p>
+        <em>Loading...</em>
+    </p>
+}
+else if (!showAdults.Any())
+{
+    <p>
+        <em>No Adults items exist. Please add some.</em>
+    </p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>First Name</th>
+            <th>Second Name</th>
+
+
+            <th>Age</th>
+            <th>HairColor</th>
+            <th>EyeColor</th>
+            <th>Weight</th>
+            <th>Height</th>
+            <th>Sex</th>
+
+            <th>Job Title</th>
+            <th>Salary</th>
+
+
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var adult in showAdults)
+        {
+            <tr>
+                <td>@adult.Id</td>
+                <td>@adult.FirstName</td>
+                <td>@adult.LastName</td>
+
+                <td>@adult.Age</td>
+                <td>@adult.HairColor</td>
+                <td>@adult.EyeColor</td>
+                <td>@adult.Weight</td>
+                <td>@adult.Height</td>
+                <td>@adult.Sex</td>
+                @if (adult.JobTitle != null)
+                {
+                    <td>@adult.JobTitle.JobTitle</td>
+                    <td>@adult.JobTitle.Salary</td>
+                }
+                else
+                {
+                    <td>No Work</td>
+                    <td>No Salary</td>
+                }
+
+            </tr>
+        }
+
+        }
+        }
+        </tbody>
+    </table>
+}
+
+
+@code {
+    private IList<Adult> adults;
+    private IList<Adult> showAdults;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+
+        adults = await FetchAdultsAsync();
+        showAdults = adults;
+    }
+
+    private void FilterId(ChangeEventArgs changeEventArgs)
+    {
+        int? filterById = null;
+        try
+        {
+            filterById = int.Parse(changeEventArgs.Value.ToString());
+        }
+        catch (Exception e)
+        {
+        }
+        if (filterById != null)
+        {
+            showAdults = showAdults.Where(t => t.Id == filterById).ToList();
+        }
+        else
+        {
+            showAdults = adults;
+        }
+    }
+
+    private void FilterFirstName(ChangeEventArgs changeEventArgs)
+    {
+        String? filterByFirstName = null;
+        try
+        {
+            filterByFirstName = changeEventArgs.Value.ToString();
+        }
+        catch (Exception e)
+        {
+        }
+        if (filterByFirstName != null)
+        {
+            showAdults = showAdults.Where(t => t.FirstName.Contains(filterByFirstName)).ToList();
+        }
+        else
+        {
+            showAdults = adults;
+        }
+    }
+
+    private void FilterLastName(ChangeEventArgs changeEventArgs)
+    {
+        String? filterBySecondName = null;
+        try
+        {
+            filterBySecondName = changeEventArgs.Value.ToString();
+        }
+        catch (Exception e)
+        {
+        }
+        if (filterBySecondName != null)
+        {
+            showAdults = showAdults.Where(t => t.LastName.Contains(filterBySecondName)).ToList();
+        }
+
+        else
+        {
+            showAdults = adults;
+        }
+    }
+
+    private void Reset()
+    {
+        showAdults = adults;
+    }
+
+    public async static Task<IList<Adult>> FetchAdultsAsync()
+    {
+        HttpClient client = new HttpClient();
+        HttpResponseMessage responseMessage = await client.GetAsync("https://localhost:5003/Adults");
+        if (!responseMessage.IsSuccessStatusCode)
+            throw new Exception($"Error: {responseMessage.StatusCode}, {responseMessage.ReasonPhrase}");
+        string result = await responseMessage.Content.ReadAsStringAsync();
+        IList<Adult> adults = JsonSerializer.Deserialize<IList<Adult>>(result,
+            new JsonSerializerOptions {PropertyNamingPolicy = JsonNamingPolicy.CamelCase});
+        return adults;
+    }
+
+
+}

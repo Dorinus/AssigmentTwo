@@ -1,0 +1,88 @@
+@page "/NewAdult"
+@using Models
+@using FileData
+@using System.Text.Json
+@using System.Text
+@inject FileContext FileContext
+@inject NavigationManager NavigationManager
+@attribute [Authorize(Policy = "Admin")]
+
+
+<h3> NewAdult</h3>
+
+
+<select @bind="newFamily.Id">
+    @if (newFamily?.Id != null)
+    {
+        @foreach (var item in FileContext.Families)
+        {
+            // All the data should come from VM, but I am sorting it in V
+            if (item.Adults.Count != 2)
+            {
+                <option value="@item.Id">@item.StreetName @item.HouseNumber</option>
+            }
+        }
+    }
+</select>
+
+<EditForm Model="@newJob">
+    <DataAnnotationsValidator/> <ValidationSummary/>
+    <div class="form-group"> Job Title:<br/> <InputText @bind-Value="newJob.JobTitle"/> </div>
+    <div class="form-group"> Salary:<br/> <InputNumber @bind-Value="newJob.Salary"/> </div>
+</EditForm>
+
+<EditForm Model="@newAdult" OnValidSubmit="@AddNewAdult">
+    <DataAnnotationsValidator/> <ValidationSummary/>
+
+
+    <div class="form-group"> FirstName:<br/> <InputText @bind-Value="newAdult.FirstName"/> </div>
+    <div class="form-group"> LastName:<br/> <InputText @bind-Value="newAdult.LastName"/> </div>
+    <div class="form-group"> Age:<br/> <InputNumber @bind-Value="newAdult.Age"/> </div>
+    <div class="form-group"> Sex:<br/> <InputText @bind-Value="newAdult.Sex"/> </div>
+    <div class="form-group"> Weight:<br/> <InputNumber @bind-Value="newAdult.Weight"/> </div>
+    <div class="form-group"> Height:<br/> <InputNumber @bind-Value="newAdult.Height"/> </div>
+    <div class="form-group"> EyeColor:<br/> <InputText @bind-Value="newAdult.EyeColor"/> </div>
+    <div class="form-group"> HairColor:<br/> <InputText @bind-Value="newAdult.HairColor"/> </div>
+
+
+    <p class="actions">
+        <button class="btn btn-outline-light" type="submit">Create</button>
+    </p>
+
+</EditForm>
+
+
+@code {
+    private Adult newAdult = new Adult();
+    private Family newFamily = new Family();
+    private Job newJob = new Job();
+
+
+    private void AddNewAdult()
+    {
+        newAdult.JobTitle = newJob;
+
+        foreach (var family in FileContext.Families)
+        {
+            if (newFamily.Id == family.Id)
+            {
+                newFamily = family;
+            }
+        }
+
+        foreach (var item in newFamily.Adults)
+        {
+            Console.WriteLine(item.FirstName);
+        }
+
+        FileContext.AddAdult(newAdult, newFamily);
+        NavigationManager.NavigateTo("/ViewAll");
+    }
+
+    
+
+
+
+
+
+}

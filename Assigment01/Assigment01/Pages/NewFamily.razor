@@ -1,0 +1,54 @@
+@page "/newfamily"
+@using Models
+@using FileData
+@using System.Text.Json
+@using System.Text
+@inject FileContext FileContext
+@inject NavigationManager NavigationManager
+@attribute [Authorize(Policy = "Admin")]
+
+<h3>NewFamily</h3>
+
+<EditForm Model="@newFamily" OnValidSubmit="@AddNewFamily">
+    <DataAnnotationsValidator/> <ValidationSummary/>
+    <div class="form-group"> Street Name:<br/> <InputText @bind-Value="newFamily.StreetName"/> </div>
+    <div class="form-group"> Street Number:<br/> <InputNumber  @bind-Value="newFamily.HouseNumber"/> </div>
+    <p class="actions">
+        <button class="btn btn-outline-light" type="submit">Create</button>
+    </p>
+</EditForm>
+
+
+@code {
+    private static Family newFamily = new();
+
+    private void AddNewFamily()
+    {
+        // Console.WriteLine("Add new family method started");
+        // FileContext.AddNewFamily(newFamily);
+        // Console.WriteLine("Add new family finished");
+        POST();
+    //NavigationManager.NavigateTo("/ViewAll");
+    }
+    
+    private async static Task POST()
+    {
+        HttpClient client = new HttpClient();
+        Family family = new() 
+        {   
+            StreetName = newFamily.StreetName,
+            HouseNumber = newFamily.HouseNumber
+        };
+        string todoAsJson = JsonSerializer.Serialize(family);
+        StringContent content = new StringContent(todoAsJson, Encoding.UTF8, "application/json");
+        HttpResponseMessage response = await client.PostAsync("https://localhost:5003/family", content);
+        
+    //TODO delete, reads the content sent back
+        Console.WriteLine(response.Content.ReadAsStringAsync());
+        
+        
+        if (!response.IsSuccessStatusCode) throw new Exception($"Error: {response.StatusCode}, {response.ReasonPhrase}");
+        
+        
+    }
+}

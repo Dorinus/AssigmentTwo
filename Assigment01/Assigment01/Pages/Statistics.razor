@@ -1,0 +1,35 @@
+@page "/statistics"
+@using Models
+@using FileData
+@using System.Collections
+@inject FileContext FileContext
+@inject IJSRuntime JsRuntime
+@attribute [Authorize(Policy = "LogedIn")]
+
+
+
+
+<h3>Statistics</h3>
+
+<div id="chartdiv"></div>
+<button class="btn btn-primary" @onclick="GeneratePieChartBlazor">Generate Pie Chart</button>
+
+@code {
+    FamilyInfo familyInfo = new FamilyInfo();
+    IList<FamilyInfo> familiesInfos = new List<FamilyInfo>();
+
+
+    private async Task GeneratePieChartBlazor()
+    {
+        familiesInfos = familyInfo.GetInfo();
+        await JsRuntime.InvokeVoidAsync("GeneratePieChart", familiesInfos);
+
+        foreach (var item in familiesInfos)
+        {
+            Console.WriteLine(item.Address+ item.NumberOfPeople);
+        }
+    }
+    
+    
+
+}
