@@ -122,9 +122,7 @@ using System.Text.Json;
     {
 
 
-        Console.WriteLine("Here");
         adults = await FetchAdultsAsync();
-        Console.WriteLine(adults);
         showAdults = adults;
     }
 
